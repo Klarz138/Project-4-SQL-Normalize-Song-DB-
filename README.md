@@ -1,6 +1,7 @@
 # Project-4-SQL-Normalize-Song-DB-
 My largest personal project to date! In this project I worked to normalize the data from a large CSV file of the top 100 songs from the 1960s - 1970s. 
-database project to normalize data from a large CSV file of the top 100 songs from the 1960s - 1970s. The file contained numerous headers: Year, Rank, Prefix, Wks Chart, Wks 40, Wks 10, Wks Peak, Peak Pos, Artist, Title, Time, Label-Number	, eight writers, Date Enter, Date Peak, and 75 cells of position week data. This was a lot of data to look at and understand. 
+
+ The CSV file contained numerous headers: Year, Rank, Prefix, Wks Chart, Wks 40, Wks 10, Wks Peak, Peak Pos, Artist, Title, Time, Label-Number	, eight writers, Date Enter, Date Peak, and 75 cells of position week data. This was a lot of data to look at and understand. 
 
 To best normalize this data, I began by looking through each of these categories for similarities. If I found similarities between the headers, I could group these into entities and form relationships. I realized there could be three main tables to best group this data: tracks, people, and position. For instance, I found the title, year, yearly rank, and date entered to best describe tracks. Each track should have data related to those columns, so I decided to group these under the track entity. I later added datePeaked into this entity, as I realized more queries could be created if this data were to be included. 
 
