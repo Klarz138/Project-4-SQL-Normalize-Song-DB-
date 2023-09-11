@@ -1,0 +1,1491 @@
+mysql> show databases; 
++--------------------+
+| Database           |
++--------------------+
+| college            |
+| dogs               |
+| finalproject       |
+| information_schema |
+| music              |
+| musicproject       |
+| mysql              |
+| performance_schema |
+| sakila             |
+| songs              |
+| sys                |
+| test               |
+| testpokemondb      |
+| world              |
++--------------------+
+14 rows in set (0.01 sec)
+
+mysql> use musicproject; 
+Database changed
+
+#Creating People Table
+mysql> CREATE TABLE People (
+    -> Person_id int primary key auto_increment, 
+    -> person_name varchar(100) not null
+    -> ); 
+
+#Creating Tracks Table
+mysql> CREATE TABLE Tracks
+    -> (
+    -> tr_id int PRIMARY KEY auto_increment, 
+    -> tr_title varchar(100), 
+    -> tr_year int, 
+    -> tr_yearlyrank varchar(10), 
+    -> tr_dateentered date, 
+    -> tr_weeksChart int, 
+    -> tr_weeksPeak int, 
+    -> tr_artist_id int, 
+    -> CONSTRAINT Track_FK FOREIGN KEY (tr_artist_id) REFERENCES People(person_id)
+    -> );
+Query OK, 0 rows affected (0.06 sec)
+
+#Creating Position Table
+mysql> create table position
+    -> (
+    -> po_track_id int not null,
+    -> po_week int not null,
+    -> po_date date not null,
+    -> po_pos int not null,
+    -> PRIMARY KEY (po_track_id, po_week),
+    -> CONSTRAINT po_track_fk FOREIGN KEY (po_track_id) REFERENCES 
+    -> tracks(tr_id)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+#Creating Linking Table between tracks and people (writers)
+mysql> CREATE TABLE Write_TrackLinkingTable
+    ->      (
+    ->      wr_track_id int not null,
+    ->      wr_seq int not null,
+    ->      wr_p_id int not null, 
+    ->     PRIMARY KEY (wr_track_id, wr_seq), 
+    ->      CONSTRAINT wr_track_fk FOREIGN KEY (wr_track_id) REFERENCES tracks(tr_id), 
+    ->      CONSTRAINT wr_people_fk FOREIGN KEY (wr_p_id) REFERENCES people(person_id) 
+    ->      );
+Query OK, 0 rows affected (0.05 sec)
+
+#showing tables
+mysql> show tables; 
++-------------------------+
+| Tables_in_musicproject  |
++-------------------------+
+| people                  |
+| position                |
+| top100                  |
+| tracks                  |
+| write_tracklinkingtable |
++-------------------------+
+5 rows in set (0.00 sec)
+
+#Inserting Data into PEOPLE table from top100
+mysql> INSERT INTO People (person_name)
+    -> select artist from top100
+    -> where artist is not null
+    -> UNION 
+    -> select writtenby1 from top100
+    -> where writtenby1 is not null
+    -> UNION
+    -> select writtenby2 from top100
+    -> where writtenby2 is not null
+    -> UNION
+    -> select writtenby3 from top100
+    -> where writtenby3 is not null
+    -> UNION
+    -> select writtenby4 from top100
+    -> where writtenby4 is not null
+    -> UNION
+    -> select writtenby5 from top100
+    -> where writtenby5 is not null
+    -> UNION
+    -> select writtenby6 from top100
+    -> where writtenby6 is not null
+    -> UNION
+    -> select writtenby7 from top100
+    -> where writtenby7 is not null
+    -> UNION
+    -> select writtenby8 from top100
+    -> where writtenby8 is not null
+    -> ;
+Query OK, 5534 rows affected (0.28 sec)
+Records: 5534  Duplicates: 0  Warnings: 0
+
+#Inserting Data into Tracks Table from top100
+mysql> INSERT INTO Tracks (tr_title, tr_year, tr_yearlyrank, tr_dateentered, tr_weeksChart, tr_peakPos, tr_artist_id)
+    -> select tracktitle, year, prefix, dateentered, weeksCHART, PeakPos, person_id
+    -> from top100, people
+    -> where (top100.artist = people.person_name); 
+Query OK, 7770 rows affected (0.39 sec)
+Records: 7770  Duplicates: 0  Warnings: 0
+
+#Inserting Data into Position table
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->   select tr_id, 1, tr_dateentered, week1 from tracks, top100
+    ->   where (week1 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->     (tr_yearlyrank = prefix);
+Query OK, 7743 rows affected (0.22 sec)
+Records: 7743  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->    select tr_id, 2, tr_dateentered + interval (2-1)*7 day, week2 from tracks, top100
+    ->     where (week2 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->     (tr_yearlyrank = prefix);
+Query OK, 7455 rows affected (0.26 sec)
+Records: 7455  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->    select tr_id, 3, tr_dateentered + interval (3-1)*7 day, week3 from tracks, 
+    ->      top100
+    ->      where (week3 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->     (tr_yearlyrank = prefix);
+Query OK, 6866 rows affected (0.21 sec)
+Records: 6866  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->     select tr_id, 4, tr_dateentered + interval (4-1)*7 day, week4 from tracks, 
+    ->      top100
+    ->      where (week4 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 6377 rows affected (0.17 sec)
+Records: 6377  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 5, tr_dateentered + interval (5-1)*7 day, week5 from tracks, top100
+    ->      where (week5 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 5912 rows affected (0.27 sec)
+Records: 5912  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 6, tr_dateentered + interval (6-1)*7 day, week6 from tracks, 
+    ->     top100
+    ->     where (week6 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 5380 rows affected (0.19 sec)
+Records: 5380  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 7, tr_dateentered + interval (7-1)*7 day, week7 from tracks, 
+    ->      top100
+    ->      where (week7 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 4713 rows affected (0.17 sec)
+Records: 4713  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 8, tr_dateentered + interval (8-1)*7 day, week8 from tracks, 
+    ->      top100
+    ->      where (week8 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 3972 rows affected (0.14 sec)
+Records: 3972  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 9, tr_dateentered + interval (9-1)*7 day, week9 from tracks, 
+    ->      top100
+    ->      where (week9 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 3257 rows affected (0.13 sec)
+Records: 3257  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 10, tr_dateentered + interval (10-1)*7 day, week10 from 
+    ->      tracks, top100
+    ->      where (week10 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 2647 rows affected (0.11 sec)
+Records: 2647  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 11, tr_dateentered + interval (11-1)*7 day, week11 from 
+    ->      tracks, top100
+    ->      where (week11 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 2173 rows affected (0.11 sec)
+Records: 2173  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 12, tr_dateentered + interval (12-1)*7 day, week12 from 
+    ->      tracks, top100
+    ->      where (week12 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 1743 rows affected (0.14 sec)
+Records: 1743  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 13, tr_dateentered + interval (13-1)*7 day, week13 from 
+    ->      tracks, top100
+    ->      where (week13 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 1352 rows affected (0.12 sec)
+Records: 1352  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 14, tr_dateentered + interval (14-1)*7 day, week14 from 
+    ->      tracks, top100
+    ->      where (week14 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 1026 rows affected (0.07 sec)
+Records: 1026  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 15, tr_dateentered + interval (15-1)*7 day, week15 from 
+    ->      tracks, top100
+    ->      where (week15 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 733 rows affected (0.07 sec)
+Records: 733  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 16, tr_dateentered + interval (16-1)*7 day, week16 from 
+    ->      tracks, top100
+    ->      where (week16 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 516 rows affected (0.07 sec)
+Records: 516  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 17, tr_dateentered + interval (17-1)*7 day, week17 from 
+    ->      tracks, top100
+    ->      where (week17 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 359 rows affected (0.07 sec)
+Records: 359  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 18, tr_dateentered + interval (18-1)*7 day, week18 from 
+    ->      tracks, top100
+    ->      where (week18 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 244 rows affected (0.06 sec)
+Records: 244  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 19, tr_dateentered + interval (19-1)*7 day, week19 from 
+    ->      tracks, top100
+    ->      where (week19 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 162 rows affected (0.09 sec)
+Records: 162  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 20, tr_dateentered + interval (20-1)*7 day, week20 from 
+    ->      tracks, top100
+    ->      where (week20 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 108 rows affected (0.10 sec)
+Records: 108  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 21, tr_dateentered + interval (21-1)*7 day, week21 from 
+    ->      tracks, top100
+    ->      where (week21 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 66 rows affected (0.06 sec)
+Records: 66  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 22, tr_dateentered + interval (22-1)*7 day, week22 from 
+    ->     tracks, top100
+    ->      where (week22 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->     (tr_yearlyrank = prefix);
+Query OK, 44 rows affected (0.10 sec)
+Records: 44  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 23, tr_dateentered + interval (23-1)*7 day, week23 from 
+    ->      tracks, top100
+    ->      where (week23 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 28 rows affected (0.10 sec)
+Records: 28  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 24, tr_dateentered + interval (24-1)*7 day, week24 from 
+    ->      tracks, top100
+    ->      where (week24 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 18 rows affected (0.09 sec)
+Records: 18  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 25, tr_dateentered + interval (25-1)*7 day, week25 from 
+    ->      tracks, top100
+    ->      where (week25 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 14 rows affected (0.06 sec)
+Records: 14  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 26, tr_dateentered + interval (26-1)*7 day, week26 from 
+    ->      tracks, top100
+    ->      where (week26 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 11 rows affected (0.06 sec)
+Records: 11  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 27, tr_dateentered + interval (27-1)*7 day, week27 from 
+    ->      tracks, top100
+    ->      where (week27 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 9 rows affected (0.07 sec)
+Records: 9  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 28, tr_dateentered + interval (28-1)*7 day, week28 from 
+    ->      tracks, top100
+    ->      where (week28 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 9 rows affected (0.09 sec)
+Records: 9  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 29, tr_dateentered + interval (29-1)*7 day, week29 from 
+    ->      tracks, top100
+    ->     where (week29 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 6 rows affected (0.06 sec)
+Records: 6  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 30, tr_dateentered + interval (30-1)*7 day, week30 from 
+    ->     tracks, top100
+    ->     where (week30 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->     (tr_yearlyrank = prefix);
+Query OK, 6 rows affected (0.08 sec)
+Records: 6  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 31, tr_dateentered + interval (31-1)*7 day, week31 from 
+    ->     tracks, top100
+    ->      where (week31 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 4 rows affected (0.06 sec)
+Records: 4  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 32, tr_dateentered + interval (32-1)*7 day, week32 from 
+    ->      tracks, top100
+    ->      where (week32 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 3 rows affected (0.09 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 33, tr_dateentered + interval (33-1)*7 day, week33 from 
+    ->      tracks, top100
+    ->      where (week33 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 2 rows affected (0.10 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 34, tr_dateentered + interval (34-1)*7 day, week34 from 
+    ->      tracks, top100
+    ->     where (week34 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 2 rows affected (0.07 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 35, tr_dateentered + interval (35-1)*7 day, week35 from 
+    ->      tracks, top100
+    ->      where (week35 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 2 rows affected (0.10 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 36, tr_dateentered + interval (36-1)*7 day, week36 from 
+    ->      tracks, top100
+    ->      where (week36 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 2 rows affected (0.05 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 37, tr_dateentered + interval (37-1)*7 day, week37 from 
+    ->      tracks, top100
+    ->      where (week37 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 2 rows affected (0.08 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 38, tr_dateentered + interval (38-1)*7 day, week38 from 
+    ->      tracks, top100
+    ->      where (week38 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 2 rows affected (0.05 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 39, tr_dateentered + interval (39-1)*7 day, week39 from 
+    ->      tracks, top100
+    ->      where (week39 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 1 row affected (0.07 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 40, tr_dateentered + interval (40-1)*7 day, week40 from 
+    ->      tracks, top100
+    ->      where (week40 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 1 row affected (0.08 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 41, tr_dateentered + interval (41-1)*7 day, week41 from 
+    ->      tracks, top100
+    ->      where (week41 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 1 row affected (0.11 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 42, tr_dateentered + interval (42-1)*7 day, week42 from 
+    ->      tracks, top100
+    ->      where (week42 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 1 row affected (0.05 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 43, tr_dateentered + interval (43-1)*7 day, week43 from 
+    ->      tracks, top100
+    ->      where (week43 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.08 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 44, tr_dateentered + interval (44-1)*7 day, week44 from 
+    ->      tracks, top100
+    ->      where (week44 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.08 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 45, tr_dateentered + interval (45-1)*7 day, week45 from 
+    ->      tracks, top100
+    ->      where (week45 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.08 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 46, tr_dateentered + interval (46-1)*7 day, week46 from 
+    ->      tracks, top100
+    ->      where (week46 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.05 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 47, tr_dateentered + interval (47-1)*7 day, week47 from 
+    ->      tracks, top100
+    ->      where (week47 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.08 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 48, tr_dateentered + interval (48-1)*7 day, week48 from 
+    ->      tracks, top100
+    ->      where (week48 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.09 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->     select tr_id, 49, tr_dateentered + interval (49-1)*7 day, week49 from 
+    ->      tracks, top100
+    ->     where (week49 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.07 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 50, tr_dateentered + interval (50-1)*7 day, week50 from 
+    ->      tracks, top100
+    ->      where (week50 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.09 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->     select tr_id, 51, tr_dateentered + interval (51-1)*7 day, week51 from 
+    ->      tracks, top100
+    ->      where (week51 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.06 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 52, tr_dateentered + interval (52-1)*7 day, week52 from 
+    ->      tracks, top100
+    ->      where (week52 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.09 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 53, tr_dateentered + interval (53-1)*7 day, week53 from 
+    ->      tracks, top100
+    ->      where (week53 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.07 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 54, tr_dateentered + interval (54-1)*7 day, week54 from 
+    ->      tracks, top100
+    ->      where (week54 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.09 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 55, tr_dateentered + interval (55-1)*7 day, week55 from 
+    ->      tracks, top100
+    ->      where (week55 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.05 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 56, tr_dateentered + interval (56-1)*7 day, week56 from 
+    ->      tracks, top100
+    ->      where (week56 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.07 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 57, tr_dateentered + interval (57-1)*7 day, week57 from 
+    ->      tracks, top100
+    ->      where (week57 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.05 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 58, tr_dateentered + interval (58-1)*7 day, week58 from 
+    ->      tracks, top100
+    ->     where (week58 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 1 row affected (0.06 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->     select tr_id, 59, tr_dateentered + interval (59-1)*7 day, week59 from 
+    ->      tracks, top100
+    ->      where (week59 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.05 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->     select tr_id, 60, tr_dateentered + interval (60-1)*7 day, week60 from 
+    ->     tracks, top100
+    ->      where (week60 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.09 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 61, tr_dateentered + interval (61-1)*7 day, week61 from 
+    ->      tracks, top100
+    ->      where (week61 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.06 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 62, tr_dateentered + interval (62-1)*7 day, week62 from 
+    ->      tracks, top100
+    ->      where (week62 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.09 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 63, tr_dateentered + interval (63-1)*7 day, week63 from 
+    ->      tracks, top100
+    ->      where (week63 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.05 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 64, tr_dateentered + interval (64-1)*7 day, week64 from 
+    ->      tracks, top100
+    ->      where (week64 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.06 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 65, tr_dateentered + interval (65-1)*7 day, week65 from 
+    ->      tracks, top100
+    ->      where (week65 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.06 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 66, tr_dateentered + interval (66-1)*7 day, week66 from 
+    ->      tracks, top100
+    ->      where (week66 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.07 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 67, tr_dateentered + interval (67-1)*7 day, week67 from 
+    ->      tracks, top100
+    ->      where (week67 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.05 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 68, tr_dateentered + interval (68-1)*7 day, week68 from 
+    ->      tracks, top100
+    ->      where (week68 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.05 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 69, tr_dateentered + interval (69-1)*7 day, week69 from 
+    ->      tracks, top100
+    ->      where (week69 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 1 row affected (0.07 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 70, tr_dateentered + interval (70-1)*7 day, week70 from 
+    ->      tracks, top100
+    ->      where (week70 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 1 row affected (0.05 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 71, tr_dateentered + interval (71-1)*7 day, week71 from 
+    ->      tracks, top100
+    ->      where (week71 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.05 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 72, tr_dateentered + interval (72-1)*7 day, week72 from 
+    ->      tracks, top100
+    ->      where (week72 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.06 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 73, tr_dateentered + interval (73-1)*7 day, week73 from 
+    ->      tracks, top100
+    ->      where (week73 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.05 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>  insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 74, tr_dateentered + interval (74-1)*7 day, week74 from 
+    ->      tracks, top100
+    ->      where (week74 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.06 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> insert into position (po_track_id,po_week, po_date, po_pos)
+    ->      select tr_id, 75, tr_dateentered + interval (75-1)*7 day, week75 from 
+    ->      tracks, top100
+    ->      where (week75 > 0) and (tr_title = tracktitle) and (tr_year = year) and 
+    ->      (tr_yearlyrank = prefix);
+Query OK, 0 rows affected (0.05 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+#Inserting data into linking table
+mysql> insert into write_trackLinkingTable (wr_track_id,wr_seq,wr_p_id)
+    -> select tr_id, 1, person_id from tracks, people, top100
+    -> where (tr_year= year) and (tr_yearlyrank = prefix)
+    -> and
+    -> (writtenby1 is not null) and (writtenby1 <> '') and
+    -> (writtenby1 = person_name) and
+    -> (tr_title = tracktitle)
+    -> UNION
+    -> select tr_id, 2, person_id from tracks, people, top100
+    -> where (tr_year= year) and (tr_yearlyrank = prefix)
+    -> and
+    -> (writtenby2 is not null) and (writtenby2 <> '') and
+    -> (writtenby2 = person_name) and
+    -> (tr_title = tracktitle)
+    -> UNION
+    -> select tr_id, 3, person_id from tracks, people, top100
+    -> where (tr_year= year) and (tr_yearlyrank = prefix)
+    -> and
+    -> (writtenby3 is not null) and (writtenby3 <> '') and
+    -> (writtenby3 = person_name) and
+    -> (tr_title = tracktitle)
+    -> UNION
+    -> select tr_id, 4, person_id from tracks, people, top100
+    -> where (tr_year= year) and (tr_yearlyrank = prefix)
+    -> and
+    -> (writtenby4 is not null) and (writtenby4 <> '') and
+    -> (writtenby4 = person_name) and
+    -> (tr_title = tracktitle)
+    -> UNION
+    -> select tr_id, 5, person_id from tracks, people, top100
+    -> where (tr_year= year) and (tr_yearlyrank = prefix)
+    -> and
+    -> (writtenby5 is not null) and (writtenby5 <> '') and
+    -> (writtenby5 = person_name) and
+    -> (tr_title = tracktitle)
+    -> UNION
+    -> select tr_id, 6, person_id from tracks, people, top100
+    -> where (tr_year= year) and (tr_yearlyrank = prefix)
+    -> and
+    -> (writtenby6 is not null) and (writtenby6 <> '') and
+    -> (writtenby6 = person_name) and
+    -> (tr_title = tracktitle)
+    -> UNION
+    -> select tr_id, 7, person_id from tracks, people, top100
+    -> where (tr_year= year) and (tr_yearlyrank = prefix)
+    -> and
+    -> (writtenby7 is not null) and (writtenby7 <> '') and
+    -> (writtenby7 = person_name) and
+    -> (tr_title = tracktitle)
+    -> UNION
+    -> select tr_id, 8, person_id from tracks, people, top100
+    -> where (tr_year= year) and (tr_yearlyrank = prefix)
+    -> and
+    -> (writtenby8 is not null) and (writtenby8 <> '') and
+    -> (writtenby8 = person_name) and
+    -> (tr_title = tracktitle)
+    -> ;
+Query OK, 10559 rows affected (3 min 49.40 sec)
+Records: 10559  Duplicates: 0  Warnings: 0
+
+
+#QUERY 1: Show the entire 100 entries in the chart for position date September 7, 1968.  The resulting table should have columns: Position, Title, Artist, DateEntered, ordered by position. (100 rows)
+
+mysql> SELECT tr_title, person_name, tr_dateentered, po_pos
+    -> FROM tracks, people, position
+    -> WHERE po_date = "1968-09-07" 
+	-> AND (Tracks.tr_artist_id = People.person_id) 
+	-> AND (Tracks.tr_id = position.po_track_id)
+    -> ORDER by po_pos ;
++--------------------------------------------------+-----------------------------------+----------------+--------+
+| tr_title                                         | person_name                       | tr_dateentered | po_pos |
++--------------------------------------------------+-----------------------------------+----------------+--------+
+| People Got To Be Free                            | Rascals, The                      | 1968-07-20     |      1 |
+| Born To Be Wild                                  | Steppenwolf                       | 1968-07-13     |      2 |
+| Light My Fire                                    | Jose Feliciano                    | 1968-07-27     |      3 |
+| Harper Valley P.T.A.                             | Jeannie C. Riley                  | 1968-08-24     |      4 |
+| Hello, I Love You                                | Doors, The                        | 1968-07-06     |      5 |
+| The House That Jack Built                        | Aretha Franklin                   | 1968-08-17     |      6 |
+| 1,2,3 Red Light                                  | 1910 Fruitgum Company, The        | 1968-07-27     |      7 |
+| You're All I Need To Get By                      | Marvin Gaye                       | 1968-07-27     |      8 |
+| I Can't Stop Dancing                             | Archie Bell & The Drells          | 1968-07-20     |      9 |
+| Stay In My Corner                                | Dells, The                        | 1968-06-29     |     10 |
+| Sunshine Of Your Love                            | Cream, The                        | 1968-01-13     |     11 |
+| You Keep Me Hangin' On                           | Vanilla Fudge                     | 1968-07-13     |     12 |
+| Hush                                             | Deep Purple                       | 1968-08-17     |     13 |
+| Turn Around, Look At Me                          | Vogues, The                       | 1968-06-15     |     14 |
+| Love Makes A Woman                               | Barbara Acklin                    | 1968-07-13     |     15 |
+| Classical Gas                                    | Mason Williams                    | 1968-06-22     |     16 |
+| The Fool On The Hill                             | Sergio Mendes and Brasil '66      | 1968-08-10     |     17 |
+| Slip Away                                        | Clarence Carter                   | 1968-07-13     |     18 |
+| Journey To The Center Of The Mind                | Amboy Dukes, The                  | 1968-06-29     |     19 |
+| Soul-Limbo                                       | Booker T. & The MG's              | 1968-07-13     |     20 |
+| Sealed With A Kiss                               | Gary Lewis and the Playboys       | 1968-06-22     |     21 |
+| Do It Again                                      | Beach Boys, The                   | 1968-07-27     |     22 |
+| I Say A Little Prayer                            | Aretha Franklin                   | 1968-08-17     |     23 |
+| Stoned Soul Picnic                               | 5th Dimension, The                | 1968-06-01     |     24 |
+| Dream A Little Dream Of Me                       | Mama Cass                         | 1968-07-06     |     25 |
+| Please Return Your Love To Me                    | Temptations, The                  | 1968-08-03     |     26 |
+| Magic Bus                                        | Who, The                          | 1968-08-10     |     27 |
+| Mr. Businessman                                  | Ray Stevens                       | 1968-08-03     |     28 |
+| Tuesday Afternoon (Forever Afternoon)            | Moody Blues, The                  | 1968-07-20     |     29 |
+| I've Gotta Get A Message To You                  | Bee Gees                          | 1968-08-17     |     30 |
+| Pictures Of Matchstick Men                       | Status Quo, The                   | 1968-05-18     |     31 |
+| The Eyes Of A New York Woman                     | B.J. Thomas                       | 1968-06-22     |     32 |
+| Girls Can't Do What The Guys Do                  | Betty Wright                      | 1968-08-03     |     33 |
+| I Get The Sweetest Feeling                       | Jackie Wilson                     | 1968-07-20     |     34 |
+| On The Road Again                                | Canned Heat                       | 1968-08-10     |     35 |
+| Down At Lulu's                                   | Ohio Express                      | 1968-08-03     |     36 |
+| Special Occasion                                 | Smokey Robinson                   | 1968-08-17     |     37 |
+| Girl Watcher                                     | O'Kaysions, The                   | 1968-08-17     |     38 |
+| Alice Long (You're Still My Favorite Girlfriend) | Tommy Boyce and Bobby Hart        | 1968-07-06     |     39 |
+| I've Never Found A Girl (To Love Me Like You Do) | Eddie Floyd                       | 1968-07-27     |     40 |
+| Hurdy Gurdy Man                                  | Donovan                           | 1968-06-22     |     41 |
+| I Can't Dance To That Music You're Playin'       | Martha Reeves and the Vandellas   | 1968-08-10     |     42 |
+| Give A Damn                                      | Spanky and Our Gang               | 1968-08-03     |     43 |
+| The Snake                                        | Al Wilson                         | 1968-08-17     |     44 |
+| Little Green Apples                              | O.C. Smith                        | 1968-08-17     |     45 |
+| Hip City (Part 2)                                | Jr. Walker and the All Stars      | 1968-08-10     |     46 |
+| Brown Eyed Woman                                 | Bill Medley                       | 1968-08-03     |     47 |
+| Six Man Band                                     | Association, The                  | 1968-08-24     |     48 |
+| I Wish It Would Rain                             | Gladys Knight and the Pips        | 1968-08-24     |     49 |
+| Help Yourself                                    | Tom Jones                         | 1968-08-31     |     50 |
+| Time Has Come Today                              | Chambers Brothers, The            | 1968-08-10     |     51 |
+| Who Is Gonna Love Me                             | Dionne Warwick                    | 1968-08-24     |     52 |
+| Morning Dew                                      | Lulu                              | 1968-08-10     |     53 |
+| And Suddenly                                     | Cherry People, The                | 1968-07-20     |     54 |
+| Can't You Find Another Way (Of Doing It)         | Sam and Dave                      | 1968-08-03     |     55 |
+| To Wait For Love                                 | Herb Alpert                       | 1968-08-31     |     56 |
+| Listen Here                                      | Eddie Harris                      | 1968-06-15     |     57 |
+| Keep The One You Got                             | Joe Tex                           | 1968-08-10     |     58 |
+| Piece Of My Heart                                | Big Brother & the Holding Company | 1968-08-31     |     59 |
+| Say It Loud - I'm Black And I'm Proud (Part 1)   | James Brown                       | 1968-09-07     |     60 |
+| (The Lament Of The Cherokee) Indian Reservation  | Don Fardon                        | 1968-08-31     |     61 |
+| My Special Angel                                 | Vogues, The                       | 1968-09-07     |     62 |
+| Workin' On A Groovy Thing                        | Patti Drew                        | 1968-08-03     |     63 |
+| Midnight Confessions                             | Grass Roots, The                  | 1968-08-31     |     64 |
+| The Weight                                       | Jackie DeShannon                  | 1968-08-24     |     65 |
+| In-A-Gadda-Da-Vida                               | Iron Butterfly                    | 1968-08-24     |     66 |
+| Barefoot In Baltimore                            | Strawberry Alarm Clock            | 1968-08-31     |     67 |
+| I Loved And I Lost                               | Impressions, The                  | 1968-07-20     |     68 |
+| Down On Me                                       | Big Brother & the Holding Company | 1968-08-31     |     69 |
+| (There's) Always Something There To Remind Me    | Dionne Warwick                    | 1968-08-31     |     70 |
+| Break Your Promise                               | Delfonics, The                    | 1968-08-31     |     71 |
+| Baby, Come Back                                  | Equals, The                       | 1968-09-07     |     72 |
+| Fly Me To The Moon                               | Bobby Womack                      | 1968-08-17     |     73 |
+| Down Here On The Ground                          | Lou Rawls                         | 1968-08-31     |     74 |
+| Private Number                                   | Judy Clay                         | 1968-08-31     |     75 |
+| The Weight                                       | Band, The                         | 1968-08-31     |     76 |
+| Unchained Melody                                 | Sweet Inspirations, The           | 1968-08-31     |     77 |
+| My Way Of Life                                   | Frank Sinatra                     | 1968-08-31     |     78 |
+| Hey, Western Union Man                           | Jerry Butler                      | 1968-08-31     |     79 |
+| That Kind Of Woman                               | Merrilee Rush                     | 1968-08-31     |     80 |
+| Fire                                             | Crazy World Of Arthur Brown, The  | 1968-09-07     |     81 |
+| The Mule                                         | James Boys, The                   | 1968-08-31     |     82 |
+| Don't Change Your Love                           | Five Stairsteps, The              | 1968-08-24     |     83 |
+| Street Fighting Man                              | Rolling Stones, The               | 1968-09-07     |     84 |
+| Do What You Gotta Do                             | Bobby Vee                         | 1968-08-31     |     85 |
+| If Love Is In Your Heart                         | Friend and Lover                  | 1968-08-31     |     86 |
+| Then You Can Tell Me Goodbye                     | Eddy Arnold                       | 1968-09-07     |     87 |
+| Shoot'em Up, Baby                                | Andy Kim                          | 1968-09-07     |     88 |
+| Naturally Stoned                                 | Avant-Garde, The                  | 1968-08-31     |     89 |
+| Shape Of Things To Come                          | Max Frost and the Troopers        | 1968-09-07     |     90 |
+| Light My Fire                                    | Doors, The                        | 1968-08-31     |     91 |
+| Suzie Q (Part 1)                                 | Creedence Clearwater Revival      | 1968-09-07     |     92 |
+| The Funky Judge                                  | Bull And The Matadors             | 1968-08-24     |     93 |
+| The Woman I Love                                 | B.B. King                         | 1968-08-24     |     94 |
+| Sally Had A Party                                | Flavor                            | 1968-08-03     |     95 |
+| Help Yourself (To All Of My Lovin')              | James and Bobby Purify            | 1968-08-31     |     96 |
+| She's About A Mover                              | Otis Clay                         | 1968-08-24     |     97 |
+| Since You've Been Gone                           | Ramsey Lewis                      | 1968-08-31     |     98 |
+| Fool For You                                     | Impressions, The                  | 1968-09-07     |     99 |
+| Lady Madonna                                     | Fats Domino                       | 1968-09-07     |    100 |
++--------------------------------------------------+-----------------------------------+----------------+--------+
+100 rows in set (0.21 sec)
+
+#QUERY 2: Show all distinct tracks whose position data is in 1970 (not the track year, but by position dates), which, at any time, occupied the #10 chart position (not necessarily the track’s highest position reached).  Show the song title and artist, ordered by title (43 rows).
+
+mysql> SELECT DISTINCT  tr_title, person_name, po_pos
+    -> FROM position, tracks, people
+    -> WHERE year(po_date) = 1970 
+	-> AND po_pos = 10 
+	-> AND (Tracks.tr_artist_id = People.person_id) 
+	-> AND (Tracks.tr_id = position.po_track_id)
+    -> ORDER BY tr_title; 
++----------------------------------------------------+------------------------------+--------+
+| tr_title                                           | person_name                  | po_pos |
++----------------------------------------------------+------------------------------+--------+
+| (I Know) I'm Losing You                            | Rare Earth                   |     10 |
+| 25 Or 6 To 4                                       | Chicago                      |     10 |
+| Ain't No Mountain High Enough                      | Diana Ross                   |     10 |
+| All Right Now                                      | Free                         |     10 |
+| Arizona                                            | Mark Lindsay                 |     10 |
+| Ball Of Confusion (That's What The World Is Today) | Temptations, The             |     10 |
+| Come And Get It                                    | Badfinger                    |     10 |
+| Didn't I (Blow Your Mind This Time)                | Delfonics, The               |     10 |
+| Easy Come, Easy Go                                 | Bobby Sherman                |     10 |
+| Evil Ways                                          | Santana                      |     10 |
+| Fire And Rain                                      | James Taylor                 |     10 |
+| Get Ready                                          | Rare Earth                   |     10 |
+| Green-Eyed Lady                                    | Sugarloaf                    |     10 |
+| He Ain't Heavy, He's My Brother                    | Hollies, The                 |     10 |
+| Hitchin' A Ride                                    | Vanity Fare                  |     10 |
+| I'll Never Fall In Love Again                      | Dionne Warwick               |     10 |
+| It Don't Matter To Me                              | Bread                        |     10 |
+| It's Only Make Believe                             | Glen Campbell                |     10 |
+| Jam Up Jelly Tight                                 | Tommy Roe                    |     10 |
+| Jingle Jangle                                      | Archies, The                 |     10 |
+| La La La (If I Had You)                            | Bobby Sherman                |     10 |
+| Lay Down (Candles In The Rain)                     | Melanie                      |     10 |
+| Leaving on A Jet Plane                             | Peter, Paul and Mary         |     10 |
+| Let It Be                                          | Beatles, The                 |     10 |
+| Lola (Studio)                                      | Kinks, The                   |     10 |
+| Lookin' Out My Back Door                           | Creedence Clearwater Revival |     10 |
+| Make It With You                                   | Bread                        |     10 |
+| Midnight Cowboy                                    | Ferrante and Teicher         |     10 |
+| Montego Bay                                        | Bobby Bloom                  |     10 |
+| No Matter What                                     | Badfinger                    |     10 |
+| O-o-h Child                                        | Five Stairsteps, The         |     10 |
+| Rainy Night In Georgia                             | Brook Benton                 |     10 |
+| Reflections Of My Life                             | Marmalade, The               |     10 |
+| Share The Land                                     | Guess Who, The               |     10 |
+| Spill The Wine                                     | Eric Burdon and War          |     10 |
+| The Long And Winding Road                          | Beatles, The                 |     10 |
+| The Love You Save                                  | Jackson 5                    |     10 |
+| The Rapper                                         | Jaggerz, The                 |     10 |
+| Tighter, Tighter                                   | Alive and Kicking            |     10 |
+| Turn Back The Hands Of Time                        | Tyrone Davis                 |     10 |
+| Up The Ladder To The Roof                          | Supremes, The                |     10 |
+| Venus                                              | Shocking Blue, The           |     10 |
+| Which Way You Goin' Billy?                         | Poppy Family, The            |     10 |
++----------------------------------------------------+------------------------------+--------+
+43 rows in set (0.10 sec)
+
+#QUERY 3: What composers had their song reach number 1 for track year (not position year) 1972? Order by composer name, showing composer name, song title, highest position (should all be 1) 31 rows.
+
+mysql> SELECT DISTINCT person_name, tr_title, po_pos
+    -> FROM People, Tracks, Position, write_tracklinkingtable
+    -> WHERE po_pos =  1 
+    -> AND tr_year = 1972 
+    -> AND (tracks.tr_id = write_tracklinkingtable.wr_track_id) 
+    -> AND (People.person_id = write_tracklinkingtable.wr_p_id) 
+    -> AND (Tracks.tr_id = Position.po_track_id) 
+    -> ORDER BY person_name; 
++---------------------------+-------------------------------------+--------+
+| person_name               | tr_title                            | po_pos |
++---------------------------+-------------------------------------+--------+
+| Al Bell (Alvertis Isbell) | I'll Take You There                 |      1 |
+| Al Green                  | Let's Stay Together                 |      1 |
+| Al Jackson                | Let's Stay Together                 |      1 |
+| Anthony Newley            | The Candy Man                       |      1 |
+| Barrett Strong            | Papa Was A Rollin' Stone            |      1 |
+| Bill Withers              | Lean On Me                          |      1 |
+| Cary Gilbert              | Me And Mrs. Jones                   |      1 |
+| Chuck Berry               | My Ding-A-Ling                      |      1 |
+| David Arkin               | Black & White                       |      1 |
+| Dewey Bunnell             | A Horse With No Name                |      1 |
+| Don Black                 | Ben                                 |      1 |
+| Don McLean                | American Pie (Parts 1 and 2)        |      1 |
+| Earl Robinson             | Black & White                       |      1 |
+| Elliot Lurie              | Brandy (You're A Fine Girl)         |      1 |
+| Eugene Record             | Oh Girl                             |      1 |
+| Ewan MacColl              | The First Time Ever I Saw Your Face |      1 |
+| Gilbert O'Sullivan        | Alone Again (Naturally)             |      1 |
+| Helen Reddy               | I Am Woman                          |      1 |
+| Johnny Nash               | I Can See Clearly Now               |      1 |
+| Kenny Gamble              | Me And Mrs. Jones                   |      1 |
+| Leon Huff                 | Me And Mrs. Jones                   |      1 |
+| Leslie Bricusse           | The Candy Man                       |      1 |
+| Mac Davis                 | Baby Don't Get Hooked On Me         |      1 |
+| Neil Diamond              | Song Sung Blue                      |      1 |
+| Neil Young                | Heart Of Gold                       |      1 |
+| Norman Whitfield          | Papa Was A Rollin' Stone            |      1 |
+| R. Burton                 | I Am Woman                          |      1 |
+| Thomas Evans              | Without You                         |      1 |
+| Walter Scharf             | Ben                                 |      1 |
+| William Peter Ham         | Without You                         |      1 |
+| Willie Mitchell           | Let's Stay Together                 |      1 |
++---------------------------+-------------------------------------+--------+
+31 rows in set (0.02 sec)
+
+#QUERY 4: What artists hit #1 in 1969, based only on the track year column, rather than the individual position dates?  Show artist, title, date peaked, highest position (should be ‘1'), order by DATE PEAKED. 16 rows.
+Note - Had to alter this table to include datePeaked as shown below
+
+mysql> ALTER TABLE tracks add column tr_datePeaked date; 
+Query OK, 0 rows affected (0.07 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> UPDATE Tracks
+	-> SET Tracks.tr_datepeaked = (
+	-> SELECT top100.datepeaked	
+	-> FROM top100
+	-> WHERE top100.prefix = Tracks.yearlyrank
+	-> ); 
+	
+Query OK, 7770 rows affected (0.43 sec)
+Rows matched: 7770 Changed: 7770 Warnings: 0
+
+mysql> SELECT DISTINCT person_name, tr_title, tr_datepeaked, po_pos, tr_year
+    ->     FROM People, Tracks, Position
+    ->     WHERE tr_year = 1969
+    ->     AND po_pos = 1
+    ->     AND (Tracks.tr_artist_id = People.person_id)
+    ->     AND (Tracks.tr_id = position.po_track_id)
+    ->     ORDER BY tr_datepeaked;
++-----------------------------------------+---------------------------------------------------+---------------+--------+---------+
+| person_name                             | tr_title                                          | tr_datepeaked | po_pos | tr_year |
++-----------------------------------------+---------------------------------------------------+---------------+--------+---------+
+| Tommy James and the Shondells           | Crimson And Clover                                | 1969-02-01    |      1 |    1969 |
+| Sly & the Family Stone                  | Everyday People                                   | 1969-02-15    |      1 |    1969 |
+| Tommy Roe                               | Dizzy                                             | 1969-03-15    |      1 |    1969 |
+| 5th Dimension, The                      | Aquarius/Let The Sunshine In (The Flesh Failures) | 1969-04-12    |      1 |    1969 |
+| Beatles, The                            | Get Back                                          | 1969-05-24    |      1 |    1969 |
+| Henry Mancini, His Orchestra and Chorus | Love Theme From Romeo & Juliet                    | 1969-06-28    |      1 |    1969 |
+| Zager & Evans                           | In The Year 2525 (Exordium & Terminus)            | 1969-07-12    |      1 |    1969 |
+| Rolling Stones, The                     | Honky Tonk Women                                  | 1969-08-23    |      1 |    1969 |
+| Archies, The                            | Sugar, Sugar                                      | 1969-09-20    |      1 |    1969 |
+| Temptations, The                        | I Can't Get Next To You                           | 1969-10-18    |      1 |    1969 |
+| Elvis Presley                           | Suspicious Minds                                  | 1969-11-01    |      1 |    1969 |
+| 5th Dimension, The                      | Wedding Bell Blues                                | 1969-11-08    |      1 |    1969 |
+| Beatles, The                            | Come Together                                     | 1969-11-29    |      1 |    1969 |
+| Steam                                   | Na Na Hey Hey Kiss Him Goodbye                    | 1969-12-06    |      1 |    1969 |
+| Peter, Paul and Mary                    | Leaving on A Jet Plane                            | 1969-12-20    |      1 |    1969 |
+| Diana Ross and the Supremes             | Someday We'll Be Together                         | 1969-12-27    |      1 |    1969 |
++-----------------------------------------+---------------------------------------------------+---------------+--------+---------+
+16 rows in set (0.02 sec)
+
+#QUERY 5: What artists also wrote the track and had their peak position in the top 20 for track year = 1973?  Show track title, artist name, highest position, ordered by artist name.  Should yield 40 rows. 
+
+mysql> SELECT DISTINCT Person_name, tr_PeakPos, tr_title, tr_year 
+    -> FROM People, Tracks, Position, write_tracklinkingtable
+    -> WHERE tr_year = 1973 
+    -> AND tr_Peakpos BETWEEN 1 AND 20 
+    -> AND (Tracks.tr_artist_id = People.person_id) 
+    -> AND (Tracks.tr_id = position.po_track_id)
+    -> AND (tracks.tr_id = write_tracklinkingtable.wr_track_id) 
+    -> AND (People.person_id = write_tracklinkingtable.wr_p_id) 
+    -> ORDER BY person_name;
++-----------------------+------------+--------------------------------------------+---------+
+| Person_name           | tr_PeakPos | tr_title                                   | tr_year |
++-----------------------+------------+--------------------------------------------+---------+
+| Al Green              |         10 | Call Me (Come Back Home)                   |    1973 |
+| Al Green              |         10 | Here I Am (Come And Take Me)               |    1973 |
+| B.W. Stevenson        |          9 | My Maria                                   |    1973 |
+| Barry White           |          3 | I'm Gonna Love You Just A Little More Baby |    1973 |
+| Billy Preston         |          1 | Will It Go Round In Circles                |    1973 |
+| Billy Preston         |          4 | Space Race                                 |    1973 |
+| Bob Dylan             |         12 | Knockin' On Heaven's Door                  |    1973 |
+| Carly Simon           |          1 | You're So Vain                             |    1973 |
+| Carly Simon           |         17 | The Right Thing To Do                      |    1973 |
+| Cat Stevens           |         16 | Sitting                                    |    1973 |
+| Charlie Daniels       |          9 | Uneasy Rider                               |    1973 |
+| Curtis Mayfield       |          8 | Superfly                                   |    1973 |
+| David Bowie           |         15 | Space Oddity                               |    1973 |
+| Donna Fargo           |          5 | Funny Face                                 |    1973 |
+| Edgar Winter          |          1 | Frankenstein                               |    1973 |
+| Elton John            |          1 | Crocodile Rock                             |    1973 |
+| Elton John            |         12 | Saturday Night's Alright For Fighting      |    1973 |
+| Elton John            |          2 | Goodbye Yellow Brick Road                  |    1973 |
+| Elton John            |          2 | Daniel                                     |    1973 |
+| George Harrison       |          1 | Give Me Love (Give Me Peace On Earth)      |    1973 |
+| Gilbert O'Sullivan    |          7 | Get Down                                   |    1973 |
+| Gilbert O'Sullivan    |         17 | Out Of The Question                        |    1973 |
+| James Taylor          |         14 | Don't Let Me Be Lonely Tonight             |    1973 |
+| Jim Croce             |          1 | Time In A Bottle                           |    1973 |
+| Jim Croce             |          1 | Bad, Bad Leroy Brown                       |    1973 |
+| Joe Simon             |         18 | Theme From "Cleopatra Jones"               |    1973 |
+| John Denver           |          9 | Rocky Mountain High                        |    1973 |
+| John Lennon           |         18 | Mind Games                                 |    1973 |
+| Kenny Loggins         |          4 | Your Mama Don't Dance                      |    1973 |
+| Kris Kristofferson    |         16 | Why Me                                     |    1973 |
+| Lou Reed              |         16 | Walk On The Wild Side                      |    1973 |
+| Loudon Wainwright III |         16 | Dead Skunk                                 |    1973 |
+| Marvin Gaye           |          1 | Let's Get It On                            |    1973 |
+| Marvin Gaye           |          7 | Trouble Man                                |    1973 |
+| Paul Simon            |          2 | Loves Me Like A Rock                       |    1973 |
+| Paul Simon            |          2 | Kodachrome                                 |    1973 |
+| Stevie Wonder         |          4 | Higher Ground                              |    1973 |
+| Stevie Wonder         |          1 | Superstition                               |    1973 |
+| Stevie Wonder         |          1 | You Are The Sunshine Of My Life            |    1973 |
+| Todd Rundgren         |          5 | Hello It's Me                              |    1973 |
++-----------------------+------------+--------------------------------------------+---------+
+40 rows in set (0.02 sec)
+                
+#QUERY 6: Use an SQL query to ascertain what 2 songs were on the chart the longest in 1972, and show the answer and the result table that provided the answer... you need not have SQL print the isolated specific answer if the result table shows multiple sorted answers.  NOTE: use the position dates within 1972, not the track year for this one!
+
+mysql> SELECT DISTINCT tr_title, count(tr_title), po_date
+    -> FROM tracks, position
+    -> WHERE year(po_date) = 1972
+    -> AND tr_id = po_track_id group by tr_title order by count(tr_title) DESC
+    -> LIMIT 2;
++------------------------+-----------------+------------+
+| tr_title               | count(tr_title) | po_date    |
++------------------------+-----------------+------------+
+| Slippin' Into Darkness |              22 | 1972-01-22 |
+| Nice To Be With You    |              22 | 1972-02-26 |
++------------------------+-----------------+------------+
+2 rows in set (0.05 sec)
+
+#QUERY 7: Which DISTINCT songs made the chart top 10 in July of 1969?  (Note: we are looking for the position(s) <= 10 during that July time period; this is NOT the same as Highest Position<=10... the highest may have happened outside of July!)  It should be 14 rows of unique songs.  Show title and artist, ordered by artist.
+
+mysql> SELECT DISTINCT tr_title, person_name
+    -> FROM tracks, people, position
+    -> WHERE year(po_date) = 1969 AND month(po_date) = 07
+    -> AND po_pos BETWEEN 1  AND 10
+    -> AND (Tracks.tr_artist_id = People.person_id) 
+    -> AND (Tracks.tr_id = position.po_track_id)
+    -> ORDER BY person_name;
++----------------------------------------+-----------------------------------------+
+| tr_title                               | person_name                             |
++----------------------------------------+-----------------------------------------+
+| Baby, I Love You                       | Andy Kim                                |
+| Get Back                               | Beatles, The                            |
+| The Ballad Of John And Yoko            | Beatles, The                            |
+| Spinning Wheel                         | Blood, Sweat & Tears                    |
+| Bad Moon Rising                        | Creedence Clearwater Revival            |
+| Love Theme From Romeo & Juliet         | Henry Mancini, His Orchestra and Chorus |
+| What Does It Take (To Win Your Love)   | Jr. Walker & the All Stars              |
+| Too Busy Thinking About My Baby        | Marvin Gaye                             |
+| Good Morning Starshine                 | Oliver                                  |
+| My Cherie Amour                        | Stevie Wonder                           |
+| One                                    | Three Dog Night                         |
+| Crystal Blue Persuasion                | Tommy James and the Shondells           |
+| Color Him Father                       | Winstons, The                           |
+| In The Year 2525 (Exordium & Terminus) | Zager & Evans                           |
++----------------------------------------+-----------------------------------------+
+14 rows in set (0.12 sec)
+
+# Query 8: Using the track’s YEAR field (not position dates!) to determine the year, what song titles were performed by more than one artist for songs appearing on the chart any time in 1969?Show song title and artists, highest position, and date peaked for each, ordered by song title (so the same titles are next to each other) and track ‘highest’ position. (27 rows) Hint: you will need to reference the tracks table twice, using aliases (table1 as A, table1 as B), in the same query!
+
+mysql> SELECT DISTINCT A.tr_title, person_name, A.tr_peakpos, A.tr_datepeaked
+    ->     FROM Tracks AS A, Tracks AS B, People
+    ->     WHERE A.tr_artist_id = person_id
+    ->     AND A.tr_title = B.tr_title
+    ->     AND A.tr_artist_id <> B.tr_artist_id
+    ->     AND A.tr_year = "1969"
+    ->     AND B.tr_year = "1969"
+    ->     ORDER BY A.tr_peakpos;
++-------------------------------+------------------------------+------------+---------------+
+| tr_title                      | person_name                  | tr_peakpos | tr_datepeaked |
++-------------------------------+------------------------------+------------+---------------+
+| Proud Mary                    | Creedence Clearwater Revival |          2 | 1969-03-08    |
+| Good Morning Starshine        | Oliver                       |          3 | 1969-07-12    |
+| Wichita Lineman               | Glen Campbell                |          3 | 1969-01-11    |
+| Galveston                     | Glen Campbell                |          4 | 1969-04-12    |
+| I'll Never Fall In Love Again | Tom Jones                    |          6 | 1969-09-13    |
+| Cloud Nine                    | Temptations, The             |          6 | 1969-01-04    |
+| These Eyes                    | Guess Who, The               |          6 | 1969-05-31    |
+| These Eyes                    | Jr. Walker & the All Stars   |         16 | 1969-12-27    |
+| The Weight                    | Aretha Franklin              |         19 | 1969-03-22    |
+| Happy Heart                   | Andy Williams                |         22 | 1969-05-31    |
+| Cloud Nine                    | Mongo Santamaria             |         32 | 1969-03-08    |
+| Abraham, Martin And John      | Smokey Robinson              |         33 | 1969-07-19    |
+| Abraham, Martin And John      | Moms Mabley                  |         35 | 1969-07-19    |
+| By The Time I Get To Phoenix  | Isaac Hayes                  |         37 | 1969-10-18    |
+| Proud Mary                    | Solomon Burke                |         45 | 1969-06-07    |
+| The Weight                    | Diana Ross and the Supremes  |         46 | 1969-10-04    |
+| Lodi                          | Creedence Clearwater Revival |         52 | 1969-05-24    |
+| Happy Heart                   | Petula Clark                 |         62 | 1969-05-10    |
+| Lodi                          | Al Wilson                    |         67 | 1969-09-13    |
+| Feeling Alright               | Joe Cocker                   |         69 | 1969-07-19    |
+| Proud Mary                    | Checkmates, Ltd., The        |         69 | 1969-11-01    |
+| By The Time I Get To Phoenix  | Mad Lads, The                |         84 | 1969-08-09    |
+| Good Morning Starshine        | Strawberry Alarm Clock       |         87 | 1969-05-24    |
+| I'll Never Fall In Love Again | Burt Bacharach               |         93 | 1969-07-12    |
+| Wichita Lineman               | Sergio Mendes and Brasil '66 |         95 | 1969-12-06    |
+| Feeling Alright               | Mongo Santamaria             |         96 | 1969-12-06    |
+| Galveston                     | Roger Williams               |         99 | 1969-06-14    |
++-------------------------------+------------------------------+------------+---------------+
+27 rows in set (0.03 sec)
+
+
+#Query 9: Show the top 40 songs for the week of 1964-04-04, showing in position order (1-40) the titles and artists. There is a very unusual occurrence in the result which has not happened before or since, and may not happen again; identify it write your observation!  (40 rows)
+My observation for this query was The Beatles appeared 6 times! The first 5 postions, as well as position 31! No other song has appeared this many times when running a query. 
+
+mysql> SELECT person_name, tr_title, po_pos
+    -> FROM people, tracks, position
+    -> WHERE po_date = "1964-04-04"
+    -> AND (Tracks.tr_artist_id = People.person_id) 
+    -> AND (Tracks.tr_id = position.po_track_id)
+    -> ORDER BY po_pos
+    -> LIMIT 40; 
++--------------------------+---------------------------------------------------+--------+
+| person_name              | tr_title                                          | po_pos |
++--------------------------+---------------------------------------------------+--------+
+| Beatles, The             | Can't Buy Me Love                                 |      1 |
+| Beatles, The             | Twist And Shout                                   |      2 |
+| Beatles, The             | She Loves You                                     |      3 |
+| Beatles, The             | I Want To Hold Your Hand                          |      4 |
+| Beatles, The             | Please Please Me                                  |      5 |
+| Terry Stafford           | Suspicion                                         |      6 |
+| Louis Armstrong          | Hello, Dolly!                                     |      7 |
+| Betty Everett            | The Shoop Shoop Song (It's In His Kiss)           |      8 |
+| Bobby Vinton             | My Heart Belongs To Only You                      |      9 |
+| Dave Clark Five          | Glad All Over                                     |     10 |
+| Four Seasons, The        | Dawn (Go Away)                                    |     11 |
+| Temptations, The         | The Way You Do The Things You Do                  |     12 |
+| Beach Boys, The          | Fun, Fun, Fun                                     |     13 |
+| Serendipity Singers, The | Don't Let The Rain Come Down (Crooked Little Man) |     14 |
+| Searchers, The           | Needles And Pins                                  |     15 |
+| Four Seasons, The        | Stay                                              |     16 |
+| Elvis Presley            | Kissin' Cousins                                   |     17 |
+| Marvin Gaye              | You're A Wonderful One                            |     18 |
+| Al (He's the King) Hirt  | Java                                              |     19 |
+| Tommy Tucker             | Hi-Heel Sneakers                                  |     20 |
+| Bobby Bland              | Ain't Nothing You Can Do                          |     21 |
+| Kingsmen, The            | Money                                             |     22 |
+| Al Martino               | I Love You More And More Every Day                |     23 |
+| Swinging Blue Jeans, The | Hippy Hippy Shake                                 |     24 |
+| Jan and Dean             | Dead Man's Curve                                  |     25 |
+| Brenda Lee               | Think                                             |     26 |
+| Diane Renay              | Navy Blue                                         |     27 |
+| Connie Francis           | Blue Winter                                       |     28 |
+| Elvis Presley            | It Hurts Me                                       |     29 |
+| Chuck Berry              | Nadine (Is It You)                                |     30 |
+| Beatles, The             | I Saw Her Standing There                          |     31 |
+| Dean And Jean            | Hey Jean, Hey Dean                                |     32 |
+| Peter, Paul and Mary     | Tell It On The Mountain                           |     33 |
+| Danny Williams           | White On White                                    |     34 |
+| Chubby Checker           | Hey, Bobba Needle                                 |     35 |
+| Devotions, The           | Rip Van Winkle                                    |     36 |
+| Bobby Goldsboro          | See The Funny Little Clown                        |     37 |
+| Ray Charles              | My Heart Cries For You                            |     38 |
+| Lesley Gore              | That's The Way Boys Are                           |     39 |
+| Jan and Dean             | The New Girl In School                            |     40 |
++--------------------------+---------------------------------------------------+--------+
+40 rows in set (0.05 sec)
+
+#Query 10: What songs having a TRACK YEAR = 1968 got their highest position in the Top 10, but never got into the Top 5?  Show title, artist, and date peaked, ordered by date peaked, and highest position (39 rows)
+
+mysql> SELECT DISTINCT tr_title, person_name, tr_datePeaked, tr_peakpos
+    -> FROM Tracks, Position, People
+    -> WHERE tr_year = 1968
+    ->  AND tr_peakpos  BETWEEN 6 AND 10
+    -> AND (Tracks.tr_artist_id = People.person_id)
+    -> AND (Tracks.tr_id = position.po_track_id)
+    -> ORDER BY tr_peakpos ASC, tr_datepeaked ASC;
++----------------------------------------------------------+------------------------------+---------------+------------+
+| tr_title                                                 | person_name                  | tr_datePeaked | tr_peakpos |
++----------------------------------------------------------+------------------------------+---------------+------------+
+| I Got The Feelin'                                        | James Brown                  | 1968-04-27    |          6 |
+| Cowboys To Girls                                         | Intruders, The               | 1968-05-18    |          6 |
+| You Keep Me Hangin' On                                   | Vanilla Fudge                | 1968-08-31    |          6 |
+| The House That Jack Built                                | Aretha Franklin              | 1968-09-07    |          6 |
+| The Fool On The Hill                                     | Sergio Mendes and Brasil '66 | 1968-09-28    |          6 |
+| Slip Away                                                | Clarence Carter              | 1968-10-05    |          6 |
+| Elenore                                                  | Turtles, The                 | 1968-11-02    |          6 |
+| White Room                                               | Cream                        | 1968-11-09    |          6 |
+| Goin' Out Of My Head/Can't Take My Eyes Off You (Medley) | Lettermen, The               | 1968-02-10    |          7 |
+| The Ballad Of Bonnie And Clyde                           | Georgie Fame                 | 1968-04-13    |          7 |
+| Love Is All Around                                       | Troggs, The                  | 1968-05-18    |          7 |
+| The Unicorn                                              | Irish Rovers, The            | 1968-05-25    |          7 |
+| Think                                                    | Aretha Franklin              | 1968-06-15    |          7 |
+| Angel Of The Morning                                     | Merrilee Rush                | 1968-06-29    |          7 |
+| Turn Around, Look At Me                                  | Vogues, The                  | 1968-08-17    |          7 |
+| You're All I Need To Get By                              | Marvin Gaye                  | 1968-09-14    |          7 |
+| My Special Angel                                         | Vogues, The                  | 1968-10-12    |          7 |
+| Over You                                                 | Gary Puckett                 | 1968-10-26    |          7 |
+| Nobody But Me                                            | Human Beinz, The             | 1968-02-03    |          8 |
+| I Wonder What She's Doing Tonite                         | Tommy Boyce and Bobby Hart   | 1968-02-24    |          8 |
+| Dance To The Music                                       | Sly and the Family Stone     | 1968-04-20    |          8 |
+| Ain't Nothing Like The Real Thing                        | Marvin Gaye                  | 1968-05-25    |          8 |
+| Here Comes The Judge                                     | Shorty Long                  | 1968-07-06    |          8 |
+| I've Gotta Get A Message To You                          | Bee Gees                     | 1968-09-28    |          8 |
+| Both Sides Now                                           | Judy Collins                 | 1968-12-21    |          8 |
+| Bottle Of Wine                                           | Fireballs, The               | 1968-03-02    |          9 |
+| I Thank You                                              | Sam and Dave                 | 1968-03-23    |          9 |
+| Shoo-Be-Doo-Be-Doo-Da-Day                                | Stevie Wonder                | 1968-05-25    |          9 |
+| I Can't Stop Dancing                                     | Archie Bell & The Drells     | 1968-08-24    |          9 |
+| I Love How You Love Me                                   | Bobby Vinton                 | 1968-12-14    |          9 |
+| If I Could Build My Whole World Around You               | Marvin Gaye                  | 1968-01-20    |         10 |
+| Everything That Touches You                              | Association, The             | 1968-03-02    |         10 |
+| Mighty Quinn (Quinn The Eskimo)                          | Manfred Mann                 | 1968-04-13    |         10 |
+| Do You Know The Way To San Jose                          | Dionne Warwick               | 1968-05-18    |         10 |
+| Reach Out Of The Darkness                                | Friend and Lover             | 1968-06-22    |         10 |
+| Indian Lake                                              | Cowsills, The                | 1968-07-13    |         10 |
+| Stay In My Corner                                        | Dells, The                   | 1968-08-24    |         10 |
+| I Say A Little Prayer                                    | Aretha Franklin              | 1968-10-05    |         10 |
+| Say It Loud - I'm Black And I'm Proud (Part 1)           | James Brown                  | 1968-10-19    |         10 |
++----------------------------------------------------------+------------------------------+---------------+------------+
+39 rows in set (0.01 sec)
+
+#Query 11: Your choice!  Come up a question similar to those above, but not simply changing a detail, like the year... that’s too easy.  Look for some data that can be solved by a query on your normalized database, that contains a result which (a) requires the joining of two or more tables, and (b) is sorted on some field or fields, and (c) is not identical/similar to a Graduate query below.  Be creative!  This one is worth extra points, see the rubric! 
+Note - For this one I chose to do a query of what people have the same first letter as my name, and occured in the year my dad was born. I joined people with tracks to find this information and printed the tr_id, person_id, person_name, and tr_title into a single table
+
+mysql> Select tracks.tr_id, people.person_id, people.person_name, tracks.tr_title
+    -> FROM tracks 
+    -> INNER JOIN people  ON tracks.tr_artist_id = people.person_id
+    -> WHERE tr_year = 1970
+    -> AND upper(left(people.person_name,1)) LIKE 'K%';
++-------+-----------+-----------------+----------------------------------------+
+| tr_id | person_id | person_name     | tr_title                               |
++-------+-----------+-----------------+----------------------------------------+
+|  4380 |        53 | Kinks, The      | Lola (Studio)                          |
+|  4403 |      1061 | Kenny Rogers    | Something's Burning                    |
+|  4440 |      1061 | Kenny Rogers    | Tell It All Brother                    |
+|  4516 |      1061 | Kenny Rogers    | Heed The Call                          |
+|  4685 |        53 | Kinks, The      | Victoria                               |
+|  4769 |      1143 | Kool & The Gang | Let The Music Take Your Mind           |
+|  4781 |      1340 | King Crimson    | The Court Of The Crimson King (Part 1) |
+|  4810 |      1143 | Kool & The Gang | The Gang's Back Again                  |
+|  4826 |      1143 | Kool & The Gang | Funky Man                              |
+|  4896 |      1371 | Klowns, The     | Lady Love                              |
++-------+-----------+-----------------+----------------------------------------+
+10 rows in set (0.01 sec)
+
+#Showing Tables 
+mysql> show tables;
++-------------------------+
+| Tables_in_musicproject  |
++-------------------------+
+| people                  |
+| position                |
+| top100                  |
+| tracks                  |
+| write_tracklinkingtable |
++-------------------------+
+5 rows in set (0.01 sec)
+
+#Describing all tables 
+mysql> desc people;
++-------------+--------------+------+-----+---------+----------------+
+| Field       | Type         | Null | Key | Default | Extra          |
++-------------+--------------+------+-----+---------+----------------+
+| Person_id   | int          | NO   | PRI | NULL    | auto_increment |
+| person_name | varchar(100) | NO   |     | NULL    |                |
++-------------+--------------+------+-----+---------+----------------+
+2 rows in set (0.00 sec)
+
+mysql> desc position;
++-------------+------+------+-----+---------+-------+
+| Field       | Type | Null | Key | Default | Extra |
++-------------+------+------+-----+---------+-------+
+| po_track_id | int  | NO   | PRI | NULL    |       |
+| po_week     | int  | NO   | PRI | NULL    |       |
+| po_date     | date | NO   |     | NULL    |       |
+| po_pos      | int  | NO   |     | NULL    |       |
++-------------+------+------+-----+---------+-------+
+4 rows in set (0.01 sec)
+
+mysql> desc top100;
++-------------+--------------+------+-----+---------+-------+
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| year        | char(4)      | NO   |     | NULL    |       |
+| yearrank    | char(4)      | NO   |     | NULL    |       |
+| prefix      | char(10)     | NO   | PRI | NULL    |       |
+| weeksCHART  | int          | NO   |     | 0       |       |
+| weeksTOP40  | int          | NO   |     | 0       |       |
+| weeksTOP10  | int          | NO   |     | 0       |       |
+| weeksPEAK   | int          | NO   |     | 0       |       |
+| PeakPos     | int          | NO   |     | 100     |       |
+| artist      | varchar(200) | NO   |     | NULL    |       |
+| tracktitle  | varchar(100) | NO   |     | NULL    |       |
+| time        | varchar(6)   | YES  |     | NULL    |       |
+| labelandnum | varchar(40)  | YES  |     | NULL    |       |
+| writtenby1  | varchar(100) | YES  |     | NULL    |       |
+| writtenby2  | varchar(100) | YES  |     | NULL    |       |
+| writtenby3  | varchar(100) | YES  |     | NULL    |       |
+| writtenby4  | varchar(100) | YES  |     | NULL    |       |
+| writtenby5  | varchar(100) | YES  |     | NULL    |       |
+| writtenby6  | varchar(100) | YES  |     | NULL    |       |
+| writtenby7  | varchar(100) | YES  |     | NULL    |       |
+| writtenby8  | varchar(100) | YES  |     | NULL    |       |
+| dateentered | date         | NO   |     | NULL    |       |
+| datepeaked  | date         | NO   |     | NULL    |       |
+| week1       | int          | YES  |     | 0       |       |
+| week2       | int          | YES  |     | 0       |       |
+| week3       | int          | YES  |     | 0       |       |
+| week4       | int          | YES  |     | 0       |       |
+| week5       | int          | YES  |     | 0       |       |
+| week6       | int          | YES  |     | 0       |       |
+| week7       | int          | YES  |     | 0       |       |
+| week8       | int          | YES  |     | 0       |       |
+| week9       | int          | YES  |     | 0       |       |
+| week10      | int          | YES  |     | 0       |       |
+| week11      | int          | YES  |     | 0       |       |
+| week12      | int          | YES  |     | 0       |       |
+| week13      | int          | YES  |     | 0       |       |
+| week14      | int          | YES  |     | 0       |       |
+| week15      | int          | YES  |     | 0       |       |
+| week16      | int          | YES  |     | 0       |       |
+| week17      | int          | YES  |     | 0       |       |
+| week18      | int          | YES  |     | 0       |       |
+| week19      | int          | YES  |     | 0       |       |
+| week20      | int          | YES  |     | 0       |       |
+| week21      | int          | YES  |     | 0       |       |
+| week22      | int          | YES  |     | 0       |       |
+| week23      | int          | YES  |     | 0       |       |
+| week24      | int          | YES  |     | 0       |       |
+| week25      | int          | YES  |     | 0       |       |
+| week26      | int          | YES  |     | 0       |       |
+| week27      | int          | YES  |     | 0       |       |
+| week28      | int          | YES  |     | 0       |       |
+| week29      | int          | YES  |     | 0       |       |
+| week30      | int          | YES  |     | 0       |       |
+| week31      | int          | YES  |     | 0       |       |
+| week32      | int          | YES  |     | 0       |       |
+| week33      | int          | YES  |     | 0       |       |
+| week34      | int          | YES  |     | 0       |       |
+| week35      | int          | YES  |     | 0       |       |
+| week36      | int          | YES  |     | 0       |       |
+| week37      | int          | YES  |     | 0       |       |
+| week38      | int          | YES  |     | 0       |       |
+| week39      | int          | YES  |     | 0       |       |
+| week40      | int          | YES  |     | 0       |       |
+| week41      | int          | YES  |     | 0       |       |
+| week42      | int          | YES  |     | 0       |       |
+| week43      | int          | YES  |     | 0       |       |
+| week44      | int          | YES  |     | 0       |       |
+| week45      | int          | YES  |     | 0       |       |
+| week46      | int          | YES  |     | 0       |       |
+| week47      | int          | YES  |     | 0       |       |
+| week48      | int          | YES  |     | 0       |       |
+| week49      | int          | YES  |     | 0       |       |
+| week50      | int          | YES  |     | 0       |       |
+| week51      | int          | YES  |     | 0       |       |
+| week52      | int          | YES  |     | 0       |       |
+| week53      | int          | YES  |     | 0       |       |
+| week54      | int          | YES  |     | 0       |       |
+| week55      | int          | YES  |     | 0       |       |
+| week56      | int          | YES  |     | 0       |       |
+| week57      | int          | YES  |     | 0       |       |
+| week58      | int          | YES  |     | 0       |       |
+| week59      | int          | YES  |     | 0       |       |
+| week60      | int          | YES  |     | 0       |       |
+| week61      | int          | YES  |     | 0       |       |
+| week62      | int          | YES  |     | 0       |       |
+| week63      | int          | YES  |     | 0       |       |
+| week64      | int          | YES  |     | 0       |       |
+| week65      | int          | YES  |     | 0       |       |
+| week66      | int          | YES  |     | 0       |       |
+| week67      | int          | YES  |     | 0       |       |
+| week68      | int          | YES  |     | 0       |       |
+| week69      | int          | YES  |     | 0       |       |
+| week70      | int          | YES  |     | 0       |       |
+| week71      | int          | YES  |     | 0       |       |
+| week72      | int          | YES  |     | 0       |       |
+| week73      | int          | YES  |     | 0       |       |
+| week74      | int          | YES  |     | 0       |       |
+| week75      | int          | YES  |     | 0       |       |
++-------------+--------------+------+-----+---------+-------+
+97 rows in set (0.01 sec)
+
+mysql> desc tracks;
++----------------+--------------+------+-----+---------+----------------+
+| Field          | Type         | Null | Key | Default | Extra          |
++----------------+--------------+------+-----+---------+----------------+
+| tr_id          | int          | NO   | PRI | NULL    | auto_increment |
+| tr_title       | varchar(100) | YES  |     | NULL    |                |
+| tr_year        | int          | YES  |     | NULL    |                |
+| tr_yearlyrank  | varchar(10)  | YES  |     | NULL    |                |
+| tr_dateentered | date         | YES  |     | NULL    |                |
+| tr_datepeaked  | date         | YES  |     | NULL    |                |
+| tr_weeksChart  | int          | YES  |     | NULL    |                |
+| tr_peakPos     | int          | YES  |     | NULL    |                |
+| tr_artist_id   | int          | YES  | MUL | NULL    |                |
++----------------+--------------+------+-----+---------+----------------+
+9 rows in set (0.00 sec)
+
+mysql> desc write_tracklinkingtable;
++-------------+------+------+-----+---------+-------+
+| Field       | Type | Null | Key | Default | Extra |
++-------------+------+------+-----+---------+-------+
+| wr_track_id | int  | NO   | PRI | NULL    |       |
+| wr_seq      | int  | NO   | PRI | NULL    |       |
+| wr_p_id     | int  | NO   | MUL | NULL    |       |
++-------------+------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+
